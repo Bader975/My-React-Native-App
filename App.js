@@ -1,86 +1,166 @@
-import { useState } from 'react';
-import { StyleSheet, Text, View, Button, Alert, TextInput, ScrollView } from 'react-native';
-
-
+import { useState, useRef, useEffect } from 'react';
+import { StyleSheet, View, Button, Alert, FlatList, Image, ImageBackground } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import bg from './assets/bg.png';
+import uuid from 'react-native-uuid';
+import axios from 'axios';
+import GoalsItem from './components/GoalsItem'
+import GoalInuput from './components/GoalInuput';
 export default function App() {
-  const [goals, setGaol] = useState('')
+  const [data, setData] = useState([])
   const [goalsList, setGaolList] = useState([])
+  const inputRef = useRef(null);
+  const [ShowModel, setShowModel] = useState(false);
+  const [showBox, setShowBox] = useState(true);
 
 
-  const AddGoal = () => {
+
+  const ModelShow = () => {
+    setShowModel((currentmodal) => !currentmodal)
+  }
+  // const apiAdd = async () => {
+  //   try {
+  //   await axios.post('https://63e223f43e12b1937638a4ed.mockapi.io/todo', {
+  //       goalsList,
+  //     });
+
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // }
+  const AddGoal = async (goals) => {
+    // I have to make sure the user doesn't accidentally Enter Empty Text !
     if (goals != '') {
-      // I have to make sure the user doesn't accidentally Enter Empty Text !
-      setGaolList((currentGoalList) => [...currentGoalList, goals])
+      setGaolList((currentGoalList) => [...currentGoalList, { text: goals, id: uuid.v4() }])
+      try {
+        await axios.post('https://63e223f43e12b1937638a4ed.mockapi.io/todo', {
+          goal: goals
+        });
 
+      } catch (e) {
+        console.log(e);
+      }
     } else {
       Alert.alert('Error', 'Please enter a goal')
     }
+
+  }
+
+
+
+  const DeleteGoal = (id) => {
+    Alert.alert(
+      "Are your sure?",
+      "Are you sure you want to remove this Gaol Form the list ?",
+      [
+        // The "Yes" button
+        {
+          text: "Yes",
+          onPress: () => {
+            setGaolList((currentGoalList) => {
+              return currentGoalList.filter((goal) => goal.id !== id);
+        
+            })
+       
+          },
+        },
+        // The "No" button
+        {
+          text: "No",
+        },
+      ]
+    );
+    // setGaolList((currentGoalList) => {
+    //   return currentGoalList.filter((goal) => goal.id !== id);
+
+    // })
   }
 
   return (
+    <>
+      <StatusBar style='light' />
+      <View style={styles.appContainer}>
+        <ImageBackground style={styles.backImage} source={require("./assets/images/bg4.jpg")} >
 
-    <View style={styles.appContainer}>
-      <View style={styles.inputContainer}>
-        <TextInput placeholder="Enter your Goal " style={styles.textInput} onChangeText={(enterdGoal) => { setGaol(enterdGoal) }}></TextInput>
-        <Button title="Add Goal" onPress={AddGoal} />
+        {!ShowModel && <Button title=" ADD New Goal" color="#5622f2" onPress={ModelShow} />}
 
+
+        {ShowModel && <GoalInuput AddGoal={AddGoal} visible={ShowModel} cancel={ModelShow} />}
+        {/* We have to Add FlatList to the App */}
+        <View >
+          {!ShowModel && <FlatList data={goalsList} renderItem={(goalsList) => {
+            return <GoalsItem text={goalsList.item.text} index={goalsList.index + 1} DeleteGoal={DeleteGoal} id={goalsList.item.id} />
+          }} />}
+        </View>
+        </ImageBackground>
       </View>
-      {/* We have to Add ScrollView to the App */}
-      <View style={styles.goalsContainer}>
-        <ScrollView>
-          {goalsList.map((goal, index) =>
-            <View key={goal} style={styles.goalsList}>
-              <Text style={{ color: '#fff' }} >{index + 1}- {goal}</Text>
-            </View>
-          )}
-        </ScrollView>
-      </View>
-    </View>
+    </>
   );
 }
 
+
 const styles = StyleSheet.create({
+
   appContainer: {
     flex: 1,
-    padding: 40,
-    marginHorizontal: 16
+    marginTop: 10,
+    paddingTop: 10,
+    borderRadius:20,
+    marginHorizontal: 6,
   },
-  inputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottomColor: '#cccccc',
-    borderBottomWidth: 1,
-    marginBottom: 15,
 
 
-  },
-  textInput: {
-    borderColor: '#cccccc',
-    borderWidth: 1,
-    width: '70%',
-    marginRight: 8,
-    padding: 5,
-   
-
-
-  },
   goalsContainer: {
     flex: 5,
-   
+
+
+
+  },
+  box: {
+    width: 300,
+    height: 300,
+    backgroundColor: "red",
+    marginBottom: 30,
+  },
+  backImage: {
+    flex:1,
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    zIndex:-1,
+    top: '4%',
+    
 
   },
 
-  goalsList: {
-    backgroundColor: '#897AB6',
-    color: '#fff',
-    margin: 6,
-    padding: 10,
-    fontSize: 25,
-    borderRadius: 10
-  }
+
 });
 
 
 
+
+// const api = async () => {
+//   try {
+//     const res = await axios.get('https://jsonplaceholder.typicode.com/todos').then((res) => {
+//       setData(res.data);
+//       console.log(data);
+//     });
+
+//   } catch (e) {
+//     console.log(e);
+//   }
+// }
+
+
+{/* Using The API Call We Fetched Data From It */ }
+{/* ------------------------------------------------------ */ }
+{/* <FlatList data={data} renderItem={(dataList) => {
+          return (
+
+            <View style={styles.goalsList}>
+              <Text style={{ color: '#fff' }} >{`${dataList.index + 1}`}- {dataList.item.title}</Text>
+            </View>
+          );
+
+        }} /> */}
+{/* -------------------------------------------------------- */ }
